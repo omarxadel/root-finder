@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 06-Jun-2021 19:53:31
+% Last Modified by GUIDE v2.5 06-Jun-2021 21:32:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -75,8 +75,8 @@ varargout{1} = handles.output;
 
 
 % --- Executes during object creation, after setting all properties.
-function density_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to density (see GCBO)
+function func_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to func (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -87,23 +87,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-
-function density_Callback(hObject, eventdata, handles)
-% hObject    handle to density (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of density as text
-%        str2double(get(hObject,'String')) returns contents of density as a double
-density = str2double(get(hObject, 'String'));
-if isnan(density)
-    set(hObject, 'String', 0);
-    errordlg('Input must be a number','Error');
-end
-
-% Save the new density value
-handles.metricdata.density = density;
-guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
 function interval_CreateFcn(hObject, eventdata, handles)
@@ -126,14 +109,17 @@ function interval_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of interval as text
 %        str2double(get(hObject,'String')) returns contents of interval as a double
-volume = str2double(get(hObject, 'String'));
-if isnan(volume)
-    set(hObject, 'String', 0);
-    errordlg('Input must be a number','Error');
+
+
+if get(handles.bisection, 'Value') == 1
+    int=get(handles.interval,'String');
+    int=strsplit(int);
+    if length(int) < 2
+        set(hObject, 'String', 0);
+        errordlg('Interval must be valid','Error');
+    end
 end
 
-% Save the new interval value
-handles.metricdata.volume = volume;
 guidata(hObject,handles)
 
 % --- Executes on button press in calculate.
@@ -141,10 +127,25 @@ function calculate_Callback(hObject, eventdata, handles)
 % hObject    handle to calculate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+a=get(handles.func,'String');
+f=inline(a);
+int=get(handles.interval,'String');
+int=strsplit(int);
+xl=str2double(int(1));
+xu=str2double(int(2));
+tol=str2double(get(handles.tol,'String'));
+itr=str2double(get(handles.itr,'String'));
 
-mass = handles.metricdata.density * handles.metricdata.volume;
-set(handles.mass, 'String', mass);
+ if(get(handles.bisection,'Value') == 1)
+    if f(xu)*f(xl)<0
+        ans = bisection(f, xl, xu, tol, itr);
+        set(handles.ans, 'String', ans);
+    else
+        errordlg('f(xu)*f(xl) must be <0','Error');
+    end
 
+ end
+     
 % --- Executes on button press in reset.
 function reset_Callback(hObject, eventdata, handles)
 % hObject    handle to reset (see GCBO)
@@ -174,12 +175,11 @@ if isfield(handles, 'metricdata') && ~isreset
     return;
 end
 
-handles.metricdata.density = 0;
-handles.metricdata.volume  = 0;
-
-set(handles.density, 'String', handles.metricdata.density);
-set(handles.interval,  'String', handles.metricdata.volume);
-set(handles.mass, 'String', 0);
+set(handles.func, 'String', 0);
+set(handles.interval,  'String', 0);
+set(handles.itr, 'String', 0);
+set(handles.tol,  'String', 0);
+% set(handles.ans, 'String', 0);
 
 set(handles.unitgroup, 'SelectedObject', handles.bisection);
 
@@ -195,3 +195,90 @@ function bisection_KeyPressFcn(hObject, eventdata, handles)
 %	Character: character interpretation of the key(s) that was pressed
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
+
+
+
+function func_Callback(hObject, eventdata, handles)
+% hObject    handle to func (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of func as text
+%        str2double(get(hObject,'String')) returns contents of func as a double
+a=get(hObject,'String');
+if isnan(a)
+    set(hObject, 'String', 0);
+    errordlg('Function must be entered','Error');
+end
+    
+f=inline(a);
+if((isempty(regexp( a, '^[A-Za-z]\w*$', 'once' ))) && true)
+    set(hObject, 'String', 0);
+    errordlg('Function must be valid','Error');
+end 
+disp(f);
+% if isnan(f)
+%     set(hObject, 'String', 0);
+%     errordlg('Function must be valid','Error');
+% end
+
+guidata(hObject,handles)
+
+
+
+
+function itr_Callback(hObject, eventdata, handles)
+% hObject    handle to itr (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of itr as text
+%        str2double(get(hObject,'String')) returns contents of itr as a double
+
+a=str2double(get(hObject,'String'));
+if isnan(a)
+    set(hObject, 'String', 0);
+    errordlg('Iterations limit must be entered and valid number','Error');
+end
+
+
+
+% --- Executes during object creation, after setting all properties.
+function itr_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to itr (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function tol_Callback(hObject, eventdata, handles)
+% hObject    handle to tol (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of tol as text
+%        str2double(get(hObject,'String')) returns contents of tol as a double
+a=str2double(get(hObject,'String'));
+if isnan(a)
+    set(hObject, 'String', 0);
+    errordlg('Tolerance must be entered and valid number','Error');
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function tol_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to tol (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
