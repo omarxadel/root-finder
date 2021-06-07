@@ -143,7 +143,13 @@ itr=str2double(get(handles.itr,'String'));
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
     end
-
+ elseif(get(handles.falsepos,'Value') == 1)
+    if f(xu)*f(xl)<0
+        ans = false_pos(f, xl, xu, tol, itr);
+        set(handles.ans, 'String', ans);
+    else
+        errordlg('f(xu)*f(xl) must be <0','Error');
+    end
  end
      
 % --- Executes on button press in reset.
@@ -160,7 +166,7 @@ function unitgroup_SelectionChangedFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if (hObject == handles.bisection)
+if (hObject == handles.bisection) || (hObject == handles.falsepos)
     set(handles.interval, 'enable', 'on');  
 else
     set(handles.interval, 'enable', 'off');
@@ -211,12 +217,12 @@ if isnan(a)
     errordlg('Function must be entered','Error');
 end
     
-f=inline(a);
-if((isempty(regexp( a, '^[A-Za-z]\w*$', 'once' ))) && true)
-    set(hObject, 'String', 0);
-    errordlg('Function must be valid','Error');
-end 
-disp(f);
+% f=inline(a);
+% if((isempty(regexp( a, '^[A-Za-z]\w*$', 'once' ))) && true)
+%     set(hObject, 'String', 0);
+%     errordlg('Function must be valid','Error');
+% end 
+% disp(f);
 % if isnan(f)
 %     set(hObject, 'String', 0);
 %     errordlg('Function must be valid','Error');
