@@ -1,5 +1,5 @@
 function [ output_args ] = bisection( f, xl, xu, tol, itr ) 
-%BISECTION: Find the root of the given function using bisection method
+%BISECTION Find the root of the given function using bisection method
 %   Input:
 %           f: The input function to calculate its root
 %           xl: Lower interval bound

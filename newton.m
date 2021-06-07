@@ -1,5 +1,5 @@
 function [ output_args ] = newton(f, x0, tol, itr )
-%NEWTONH-RAPHSON: Find the root of the given function using Newton-Raphson method
+%NEWTON Find the root of the given function using Newton-Raphson method
 %   Input:
 %           f: The input function to calculate its root
 %           x0: initial input

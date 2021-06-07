@@ -1,5 +1,5 @@
 function [ output_args ] = false_pos( f, xl, xu, tol, itr )
-%FALSE_POS: Find the root of the given function using false position method
+%FALSE_POS Find the root of the given function using false position method
 %   Input:
 %           f: The input function to calculate its root
 %           xl: Lower interval bound
