@@ -110,13 +110,17 @@ function interval_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of interval as text
 %        str2double(get(hObject,'String')) returns contents of interval as a double
 
-
-if get(handles.bisection, 'Value') == 1
-    int=get(handles.interval,'String');
+int=get(handles.interval,'String');
+if (get(handles.bisection, 'Value') == 1) || (get(handles.falsepos, 'Value') == 1)
     int=strsplit(int);
     if length(int) < 2
         set(hObject, 'String', 0);
         errordlg('Interval must be valid','Error');
+    end
+elseif (get(handles.newt, 'Value') == 1)
+    if isnan(str2double(int))
+        set(hObject, 'String', 0);
+        errordlg('Xo must be valid','Error');
     end
 end
 
@@ -127,16 +131,18 @@ function calculate_Callback(hObject, eventdata, handles)
 % hObject    handle to calculate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+syms x;
 a=get(handles.func,'String');
 f=inline(a);
 int=get(handles.interval,'String');
-int=strsplit(int);
-xl=str2double(int(1));
-xu=str2double(int(2));
+
 tol=str2double(get(handles.tol,'String'));
 itr=str2double(get(handles.itr,'String'));
 
  if(get(handles.bisection,'Value') == 1)
+    int=strsplit(int);
+    xl=str2double(int(1));
+    xu=str2double(int(2));
     if f(xu)*f(xl)<0
         ans = bisection(f, xl, xu, tol, itr);
         set(handles.ans, 'String', ans);
@@ -144,12 +150,20 @@ itr=str2double(get(handles.itr,'String'));
         errordlg('f(xu)*f(xl) must be <0','Error');
     end
  elseif(get(handles.falsepos,'Value') == 1)
+    int=strsplit(int);
+    xl=str2double(int(1));
+    xu=str2double(int(2));
     if f(xu)*f(xl)<0
         ans = false_pos(f, xl, xu, tol, itr);
         set(handles.ans, 'String', ans);
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
     end
+ elseif(get(handles.newt,'Value') == 1)
+     f1=inline2sym(f);
+     xo = str2double(int);
+     ans = newton(f1, xo, tol, itr);
+     set(handles.ans, 'String', ans);
  end
      
 % --- Executes on button press in reset.
@@ -168,6 +182,10 @@ function unitgroup_SelectionChangedFcn(hObject, eventdata, handles)
 
 if (hObject == handles.bisection) || (hObject == handles.falsepos)
     set(handles.interval, 'enable', 'on');  
+    set(handles.interval_name, 'String', 'Interval');  
+elseif (hObject == handles.newt)
+    set(handles.interval, 'enable', 'on');  
+    set(handles.interval_name, 'String', 'Xo');  
 else
     set(handles.interval, 'enable', 'off');
 end
@@ -185,7 +203,7 @@ set(handles.func, 'String', 0);
 set(handles.interval,  'String', 0);
 set(handles.itr, 'String', 0);
 set(handles.tol,  'String', 0);
-% set(handles.ans, 'String', 0);
+set(handles.ans, 'String', 0);
 
 set(handles.unitgroup, 'SelectedObject', handles.bisection);
 
