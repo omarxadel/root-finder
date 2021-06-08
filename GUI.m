@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 06-Jun-2021 21:32:35
+% Last Modified by GUIDE v2.5 07-Jun-2021 18:51:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -93,23 +93,12 @@ function func_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of func as text
 %        str2double(get(hObject,'String')) returns contents of func as a double
-a=get(hObject,'String');
-if isnan(a)
-    set(hObject, 'String', 0);
-    errordlg('Function must be entered','Error');
+
+% Function Validation
+if (str2double(get(hObject, 'String')) == 0)
+    errordlg('Please enter a valid function','Error');
 end
     
-% f=inline(a);
-% if((isempty(regexp( a, '^[A-Za-z]\w*$', 'once' ))) && true)
-%     set(hObject, 'String', 0);
-%     errordlg('Function must be valid','Error');
-% end 
-% disp(f);
-% if isnan(f)
-%     set(hObject, 'String', 0);
-%     errordlg('Function must be valid','Error');
-% end
-
 guidata(hObject,handles)
 
 
@@ -121,7 +110,8 @@ function itr_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of itr as text
 %        str2double(get(hObject,'String')) returns contents of itr as a double
 
-a=str2double(get(hObject,'String'));
+% Iteration Validation
+a = str2double(get(hObject,'String'));
 if isnan(a)
     set(hObject, 'String', 0);
     errordlg('Iterations limit must be entered and valid number','Error');
@@ -150,7 +140,10 @@ function tol_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of tol as text
 %        str2double(get(hObject,'String')) returns contents of tol as a double
-a=str2double(get(hObject,'String'));
+
+
+% Tolerance Validation
+a = str2double(get(hObject,'String'));
 if isnan(a)
     set(hObject, 'String', 0);
     errordlg('Tolerance must be entered and valid number','Error');
@@ -193,16 +186,16 @@ function interval_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of interval as text
 %        str2double(get(hObject,'String')) returns contents of interval as a double
 
-int=get(handles.interval,'String');
-if (get(handles.bisection, 'Value') == 1) || (get(handles.falsepos, 'Value') == 1)
-    int=strsplit(int);
-    if length(int) < 2
-        set(hObject, 'String', 0);
+% Interval Validation
+nums = strsplit(get(handles.interval,'String'));
+if(get(handles.bisection, 'Value') == 1) || (get(handles.falsepos, 'Value') == 1)
+    if length(nums) < 2
+        set(handles.interval, 'String', 0);
         errordlg('Interval must be valid','Error');
     end
 elseif (get(handles.newt, 'Value') == 1)
-    if isnan(str2double(int))
-        set(hObject, 'String', 0);
+    if isnan(str2double(nums))
+        set(handles.interval, 'String', 0);
         errordlg('Xo must be valid','Error');
     end
 end
@@ -215,27 +208,27 @@ function calculate_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Extract data
+
 % Function
-a=get(handles.func,'String');
-f=inline(a);
+a = get(handles.func,'String');
+f = inline(a);
 
 % Interval
-int=get(handles.interval,'String');
+int = get(handles.interval,'String');
 
 % Tolerance
-tol=str2double(get(handles.tol,'String'));
+tol = str2double(get(handles.tol,'String'));
 
 % Iteration
-itr=str2double(get(handles.itr,'String'));
+itr = str2double(get(handles.itr,'String'));
 
+
+validate(handles);
 % Bisection
+
  if(get(handles.bisection,'Value') == 1)
-    int=strsplit(int);
-    
-    if length(int) < 2
-        set(handles.interval, 'String', 0);
-        errordlg('Interval must be valid','Error');
-    end
+    int = strsplit(int);
     
     xl=str2double(int(1));
     xu=str2double(int(2));
@@ -245,15 +238,17 @@ itr=str2double(get(handles.itr,'String'));
         set(handles.ans, 'String', ans);
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
+        return
     end
 % False-Position
  elseif(get(handles.falsepos,'Value') == 1)
-    int=strsplit(int);
+    int = strsplit(int);
     
     if length(int) < 2
         set(handles.interval, 'String', 0);
         errordlg('Interval must be valid','Error');
-    end
+        return
+    end,
     
     xl=str2double(int(1));
     xu=str2double(int(2));
@@ -263,23 +258,25 @@ itr=str2double(get(handles.itr,'String'));
         set(handles.ans, 'String', ans);
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
+        return
     end
  % Newton-Raphson
  elseif(get(handles.newt,'Value') == 1)
-    xo = str2double(int);
+    xo = str2double(handles.params.int);
     if isnan(xo)
         set(handles.interval, 'String', 0);
         errordlg('Xo must be valid','Error');
+        return
     end
      
      syms x;
      f1=inline2sym(f);
-     
-
-     
+          
      ans = newton(f1, xo, tol, itr);
      set(handles.ans, 'String', ans);
  end
+
+
      
 % --- Executes on button press in reset.
 function reset_Callback(hObject, eventdata, handles)
@@ -288,6 +285,86 @@ function reset_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 initialize_gui(gcbf, handles, true);
+
+
+% --- Executes on button press in browse.
+function browse_Callback(hObject, eventdata, handles)
+% hObject    handle to browse (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[file,path] = uigetfile('*.txt');
+if isequal(file,0)
+   disp('User selected Cancel');
+else
+   disp(['User selected ', fullfile(path,file)]);
+   fileID = fopen(fullfile(path,file), 'r');
+   f = fgetl(fileID);
+   set(handles.func, 'String', f);
+   method = fgetl(fileID);
+   if(strcmp(method, 'Bisection'))
+       set(handles.bisection, 'Value', 1);
+   elseif(strcmp(method, 'False-Position'))
+       set(handles.falsepos, 'Value', 1);
+   elseif(strcmp(method, 'Newton-Raphson'))
+       set(handles.newt, 'Value', 1);
+   end
+   interval_val = fgetl(fileID);
+   set(handles.interval, 'String', interval_val);
+   num = fgetl(fileID);
+   num = str2double(num);
+   if(floor(num) == num) % is int
+       set(handles.itr, 'String', num);
+   else
+       set(handles.tol, 'String', num);
+   end
+   fclose(fileID);
+   validate(handles);
+end
+
+% --- Validate the given inputs
+function validate(handles)
+nums = strsplit(get(handles.interval,'String'));
+
+% Function Validation
+if (str2double(get(handles.func, 'String')) == 0)
+    errordlg('Please enter a valid function','Error'); 
+
+% Iteration Validation
+elseif isnan(str2double(get(handles.itr,'String')))
+    set(handles.itr, 'String', 0);
+    errordlg('Iterations limit must be entered and valid number','Error');
+
+
+% Tolerance Validation
+elseif isnan(str2double(get(handles.tol,'String')))
+    set(handles.tol, 'String', 0);
+    errordlg('Tolerance must be entered and valid number','Error');
+
+% Interval Validation
+elseif(get(handles.bisection, 'Value') == 1) || (get(handles.falsepos, 'Value') == 1)
+    if length(nums) < 2
+        set(handles.interval, 'String', 0);
+        errordlg('Interval must be valid','Error');
+    end
+elseif (get(handles.newt, 'Value') == 1)
+    if isnan(str2double(nums)) | (length(nums) > 1)
+        disp(str2double(nums));
+        set(handles.interval, 'String', 0);
+        errordlg('Xo must be valid','Error');
+    end
+    
+end
+
+if (get(handles.bisection, 'Value') == 1) || (get(handles.falsepos, 'Value') == 1)
+    set(handles.interval, 'enable', 'on');  
+    set(handles.interval_name, 'String', 'Interval');  
+elseif (get(handles.newt, 'Value') == 1)
+    set(handles.interval, 'enable', 'on');  
+    set(handles.interval_name, 'String', 'Xo');  
+else
+    set(handles.interval, 'enable', 'off');
+end
+    
 
 % --- Executes when selected object changed in unitgroup.
 function unitgroup_SelectionChangedFcn(hObject, eventdata, handles)
@@ -310,6 +387,8 @@ function initialize_gui(fig_handle, handles, isreset)
 % If the metricdata field is present and the reset flag is false, it means
 % we are we are just re-initializing a GUI by calling it from the cmd line
 % while it is up. So, bail out as we dont want to reset the data.
+
+clc;
 
 set(handles.func, 'String', 0);
 set(handles.interval,  'String', 0);
