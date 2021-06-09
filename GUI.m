@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 06-Jun-2021 21:32:35
+% Last Modified by GUIDE v2.5 09-Jun-2021 00:21:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -250,6 +250,7 @@ itr=str2double(get(handles.itr,'String'));
  elseif(get(handles.falsepos,'Value') == 1)
     int=strsplit(int);
     
+    
     if length(int) < 2
         set(handles.interval, 'String', 0);
         errordlg('Interval must be valid','Error');
@@ -274,11 +275,39 @@ itr=str2double(get(handles.itr,'String'));
      
      syms x;
      f1=inline2sym(f);
-     
-
-     
+          
      ans = newton(f1, xo, tol, itr);
      set(handles.ans, 'String', ans);
+ end
+ % Fixed-Point
+ if(get(handles.fixedpoint,'Value') == 1)
+    int=strsplit(int);
+    
+   x0 = str2double(int);
+    if isnan(x0)
+        set(handles.interval, 'String', 0);
+        errordlg('Xo must be valid','Error');
+    end
+    
+     syms x;
+     f1=inline2sym(f);
+   ans = fixed_point(f1, x0, tol, itr);
+   set(handles.ans, 'String', ans);
+ end
+ % Secant
+ if(get(handles.secant,'Value') == 1)
+    int=strsplit(int);
+
+    if length(int) < 2
+        set(handles.interval, 'String', 0);
+        errordlg('Interval must be valid','Error');
+    end
+    
+    xl=str2double(int(1));
+    xu=str2double(int(2));
+   
+   ans = secant(f, xl, xu, tol, itr);
+   set(handles.ans, 'String', ans);
  end
      
 % --- Executes on button press in reset.
@@ -295,12 +324,15 @@ function unitgroup_SelectionChangedFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.interval,  'String', 0);
-if (hObject == handles.bisection) || (hObject == handles.falsepos)
+if (hObject == handles.bisection) || (hObject == handles.falsepos) || (hObject == handles.secant)
     set(handles.interval, 'enable', 'on');  
     set(handles.interval_name, 'String', 'Interval');  
 elseif (hObject == handles.newt)
     set(handles.interval, 'enable', 'on');  
     set(handles.interval_name, 'String', 'Xo');  
+elseif (hObject == handles.fixedpoint)
+    set(handles.interval, 'enable', 'on');  
+    set(handles.interval_name, 'String', 'Xo'); 
 else
     set(handles.interval, 'enable', 'off');
 end
@@ -322,3 +354,21 @@ set(handles.interval_name, 'String', 'Interval');
 
 % Update handles structure
 guidata(handles.figure1, handles);
+
+
+% --- Executes on button press in newt.
+function newt_Callback(hObject, eventdata, handles)
+% hObject    handle to newt (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of newt
+
+
+% --- Executes on button press in bisection.
+function bisection_Callback(hObject, eventdata, handles)
+% hObject    handle to bisection (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of bisection
