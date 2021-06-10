@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 09-Jun-2021 00:21:58
+% Last Modified by GUIDE v2.5 10-Jun-2021 16:20:15
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -234,7 +234,7 @@ validate(handles);
     xu=str2double(int(2));
     
     if f(xu)*f(xl)<0
-        ans = bisection(f, xl, xu, tol, itr);
+        [~, ~, ans, ~, ~] = bisection(f, xl, xu, tol, itr);
         set(handles.ans, 'String', ans);
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
@@ -384,12 +384,15 @@ function unitgroup_SelectionChangedFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.interval,  'String', 0);
-if (hObject == handles.bisection) || (hObject == handles.falsepos) || (hObject == handles.secant)
-    set(handles.interval, 'enable', 'on');  
-    set(handles.interval_name, 'String', 'Interval');  
+if (hObject == handles.bisection) || (hObject == handles.falsepos)
+    set(handles.interval_name, 'String', 'Interval'); 
+    set(handles.uitable1, 'columnname', {'xl', 'xu', 'xr', 'f(xr)', 'err'});
+elseif (hObject == handles.secant)
+        set(handles.interval_name, 'String', 'Interval');  
+        set(handles.uitable1, 'columnname', {'x(i-1)', 'x(i)', 'f(xi-1)', 'f(xi)', 'x(i+1)' , 'err'});
 elseif (hObject == handles.newt)
-    set(handles.interval, 'enable', 'on');  
-    set(handles.interval_name, 'String', 'Xo');  
+    set(handles.interval_name, 'String', 'Xo');
+    set(handles.uitable1, 'columnname', {'x(i)', 'x(i+1)', 'err'});
 else
     set(handles.interval, 'enable', 'off');
 end
@@ -399,6 +402,11 @@ function initialize_gui(fig_handle, handles, isreset)
 % If the metricdata field is present and the reset flag is false, it means
 % we are we are just re-initializing a GUI by calling it from the cmd line
 % while it is up. So, bail out as we dont want to reset the data.
+global currStep;
+currStep = 2;
+
+global tolFlag;
+tolFlag = 0;
 
 clc;
 
@@ -407,6 +415,8 @@ set(handles.interval,  'String', 0);
 set(handles.itr, 'String', 50);
 set(handles.tol,  'String', 0.00001);
 set(handles.ans, 'String', 0);
+set(handles.uitable1, 'columnname', {'xl', 'xu', 'xr', 'f(xr)', 'err'});
+set(handles.uitable1, 'data', []);
 
 set(handles.unitgroup, 'SelectedObject', handles.bisection);
 set(handles.interval_name, 'String', 'Interval');
@@ -431,3 +441,127 @@ function bisection_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of bisection
+
+% --- Executes on button press in step.
+function step_Callback(hObject, eventdata, handles)
+% hObject    handle to step (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global currStep;
+global tolFlag;
+
+% Extract data
+% Function
+a = get(handles.func,'String');
+f = inline(a);
+
+% Interval
+int = get(handles.interval,'String');
+
+% Tolerance
+tol = str2double(get(handles.tol,'String'));
+
+% Iteration
+itr = str2double(get(handles.itr,'String'));
+validate(handles);
+
+% Bisection
+
+ if(get(handles.bisection,'Value') == 1)
+    int = strsplit(int);
+    
+    xl=str2double(int(1));
+    xu=str2double(int(2));
+    
+    if f(xu)*f(xl)<0
+        output = [];
+        prev_ans = 0;
+        if currStep > itr+1
+            errordlg('Iterations specified surpassed!','Error');
+            return;
+        end
+        if tolFlag
+            errordlg('Error limit reached!','Error');
+            return
+        end
+        for i = 2:currStep
+            line = [ xl xu ];
+            [xl, xu, ans, fx, ~] = bisection(f, xl, xu, tol, 3);
+            if i == 2
+                err = prev_ans;
+            else
+                err = abs(ans-prev_ans)/ans;
+            end
+            line = [line ans fx err];
+            output = [output; line;];
+            set(handles.ans, 'String', ans);
+            if(err < tol && err ~= 0)
+                tolFlag = 1;
+                break;
+            end;
+            prev_ans = ans;
+        end
+        set(handles.uitable1, 'data', output);
+        currStep = currStep+1;
+    else
+        errordlg('f(xu)*f(xl) must be <0','Error');
+        return
+    end
+% False-Position
+ elseif(get(handles.falsepos,'Value') == 1)
+    int = strsplit(int);
+    
+    
+    if length(int) < 2
+        set(handles.interval, 'String', 0);
+        errordlg('Interval must be valid','Error');
+        return
+    end,
+    
+    xl=str2double(int(1));
+    xu=str2double(int(2));
+    
+    if f(xu)*f(xl)<0
+        ans = false_pos(f, xl, xu, tol, itr);
+        set(handles.ans, 'String', ans);
+    else
+        errordlg('f(xu)*f(xl) must be <0','Error');
+        return
+    end
+ % Newton-Raphson
+ elseif(get(handles.newt,'Value') == 1)
+    xo = str2double(int);
+    if isnan(xo)
+        set(handles.interval, 'String', 0);
+        errordlg('Xo must be valid','Error');
+        return
+    end
+     
+     syms x;
+     f1=inline2sym(f);
+          
+     ans = newton(f1, xo, tol, itr);
+     set(handles.ans, 'String', ans);
+ end
+ % Secant
+ if(get(handles.secant,'Value') == 1)
+    int=strsplit(int);
+
+    if length(int) < 2
+        set(handles.interval, 'String', 0);
+        errordlg('Interval must be valid','Error');
+    end
+    
+    xl=str2double(int(1));
+    xu=str2double(int(2));
+   
+   ans = secant(f, xl, xu, tol, itr);
+   set(handles.ans, 'String', ans);
+ end
+
+% --- Executes during object creation, after setting all properties.
+function uitable1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to uitable1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
