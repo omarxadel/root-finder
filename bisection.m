@@ -1,4 +1,4 @@
-function [ output_args ] = bisection( f, xl, xu, tol, itr ) 
+function [ xl, xu, xr, fx, err ] = bisection( f, xl, xu, tol, itr ) 
 %BISECTION Find the root of the given function using bisection method
 %   Input:
 %           f: The input function to calculate its root
@@ -8,8 +8,8 @@ function [ output_args ] = bisection( f, xl, xu, tol, itr )
 %           itr: Iterations limit
 %   This function takes the function, interval, error tolerance and
 %   iterations limit to compute the root using bisection method.
-
-for i=2:itr
+i = 2;
+while i<itr
     xr=(xu+xl)/2;
     if f(xu)*f(xr)<0
         xl=xr;
@@ -24,9 +24,12 @@ for i=2:itr
     end
 xnew(1)=0;
 xnew(i)=xr;
-
+if i > 2
 if abs((xnew(i)-xnew(i-1))/xnew(i))<tol,break,end
 end
-output_args = num2str(xr);
+i = i + 1;
+end
+fx = f(xr);
+err = abs((xnew(i-1)-xnew(i-2))/xnew(i-1));
 end
 
