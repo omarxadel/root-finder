@@ -242,7 +242,9 @@ validate(handles);
     xu=str2double(int(2));
     
     if f(xu)*f(xl)<0
+        tic;
         [~, ~, ans, ~, ~] = bisection(f, xl, xu, tol, itr);
+        toc;
         set(handles.ans, 'String', ans);
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
@@ -262,7 +264,9 @@ validate(handles);
     xu=str2double(int(2));
     
     if f(xu)*f(xl)<0
+        tic;
         [~, ~, ans, ~, ~] = false_pos(f, xl, xu, tol, itr);
+        toc;
         set(handles.ans, 'String', ans);
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
@@ -279,8 +283,10 @@ validate(handles);
      
      syms x;
      f1=inline2sym(f);
-          
+     
+     tic;
      [~, ans, ~] = newton(f1, xo, tol, itr);
+     toc;
      set(handles.ans, 'String', ans);
  end
  % Secant
@@ -294,9 +300,10 @@ validate(handles);
     
     xl=str2double(int(1));
     xu=str2double(int(2));
-   
-   [ ~, ~, ~, ~, ans, ~]  = secant(f, xl, xu, tol, itr);
-   set(handles.ans, 'String', ans);
+    tic;
+    [ ~, ~, ~, ~, ans, ~]  = secant(f, xl, xu, tol, itr);
+    toc;
+    set(handles.ans, 'String', ans);
  end
      
 % --- Executes on button press in reset.
@@ -548,7 +555,7 @@ validate(handles);
     xl=str2double(int(1));
     xu=str2double(int(2));
     
-    if f(xu)*f(xl)<0S
+    if f(xu)*f(xl)<0
         output = [];
         prev_ans = 0;
         if currStep > itr+1
@@ -605,7 +612,7 @@ validate(handles);
         return
     end
     for i = 2:currStep
-        [x1, fx1, x2, fx2, x3, fx3, err] = newton(f1, xo, tol, 3);
+        [xo x1 err] = newton(f1, xo, tol, 3);
         output = [output; xo x1 err;];
         set(handles.ans, 'String', x1);
         if(err < tol && err ~= 0)
