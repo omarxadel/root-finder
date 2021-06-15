@@ -1,4 +1,4 @@
-function [output_args] = secant(f,x1, x2, tol, itr)
+function [ x1_1, x2_1, fx1, fx2, x3, err ] = secant( f,x1, x2, tol, itr )
 %SECANT Summary of this function goes here
 %   Input:%         
 %           f: The input function to calculate its root
@@ -7,16 +7,18 @@ function [output_args] = secant(f,x1, x2, tol, itr)
 %           tol: Error tolerance 
 %           itr: Iterations limit
 
+i = 2;
+x1_1 = x1;
+fx1 = f(x1);
+x2_1 = x2;
+fx2 = f(x2);
+while i < itr
     x3 = x2 - ((f(x2)*(x1-x2))/(f(x1)-f(x2)));
-    
-for i=2:itr
-    xnew(1)=0;
+    if abs((x3-x2)/x3)<tol,break,end
     x1 = x2;
     x2 = x3;
-    x3 = x2 - ((f(x2)*(x1-x2))/(f(x1)-f(x2)));
-    
-if abs((x3-x2)/x3)<tol,break,end
+    i = i + 1;
 end
-output_args = num2str(x3);
+err = abs((x3-x2)/x3);
 end
 

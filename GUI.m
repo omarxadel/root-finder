@@ -57,7 +57,7 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-initialize_gui(hObject, handles, false);
+initialize_gui(handles);
 
 % UIWAIT makes GUI wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -98,6 +98,8 @@ function func_Callback(hObject, eventdata, handles)
 if (str2double(get(hObject, 'String')) == 0)
     errordlg('Please enter a valid function','Error');
 end
+
+reset_table(handles);
     
 guidata(hObject,handles)
 
@@ -115,6 +117,8 @@ a = str2double(get(hObject,'String'));
 if isnan(a)
     set(hObject, 'String', 0);
     errordlg('Iterations limit must be entered and valid number','Error');
+
+reset_table(handles);
 end
 
 
@@ -147,6 +151,8 @@ a = str2double(get(hObject,'String'));
 if isnan(a)
     set(hObject, 'String', 0);
     errordlg('Tolerance must be entered and valid number','Error');
+    
+reset_table(handles);
 end
 
 
@@ -200,6 +206,8 @@ elseif (get(handles.newt, 'Value') == 1)
     end
 end
 
+reset_table(handles);
+
 guidata(hObject,handles)
 
 % --- Executes on button press in calculate.
@@ -244,7 +252,6 @@ validate(handles);
  elseif(get(handles.falsepos,'Value') == 1)
     int = strsplit(int);
     
-    
     if length(int) < 2
         set(handles.interval, 'String', 0);
         errordlg('Interval must be valid','Error');
@@ -255,7 +262,7 @@ validate(handles);
     xu=str2double(int(2));
     
     if f(xu)*f(xl)<0
-        ans = false_pos(f, xl, xu, tol, itr);
+        [~, ~, ans, ~, ~] = false_pos(f, xl, xu, tol, itr);
         set(handles.ans, 'String', ans);
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
@@ -273,7 +280,7 @@ validate(handles);
      syms x;
      f1=inline2sym(f);
           
-     ans = newton(f1, xo, tol, itr);
+     [~, ans, ~] = newton(f1, xo, tol, itr);
      set(handles.ans, 'String', ans);
  end
  % Secant
@@ -288,7 +295,7 @@ validate(handles);
     xl=str2double(int(1));
     xu=str2double(int(2));
    
-   ans = secant(f, xl, xu, tol, itr);
+   [ ~, ~, ~, ~, ans, ~]  = secant(f, xl, xu, tol, itr);
    set(handles.ans, 'String', ans);
  end
      
@@ -298,7 +305,7 @@ function reset_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-initialize_gui(gcbf, handles, true);
+initialize_gui(handles);
 
 
 % --- Executes on button press in browse.
@@ -306,6 +313,7 @@ function browse_Callback(hObject, eventdata, handles)
 % hObject    handle to browse (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+initialize_gui(handles);
 [file,path] = uigetfile('*.txt');
 if isequal(file,0)
 else
@@ -319,6 +327,8 @@ else
        set(handles.falsepos, 'Value', 1);
    elseif(strcmp(method, 'Newton-Raphson'))
        set(handles.newt, 'Value', 1);
+   elseif(strcmp(method, 'Secant'))
+       set(handles.secant, 'Value', 1);
    end
    interval_val = fgetl(fileID);
    set(handles.interval, 'String', interval_val);
@@ -367,12 +377,18 @@ elseif (get(handles.newt, 'Value') == 1)
     
 end
 
-if (get(handles.bisection, 'Value') == 1) || (get(handles.falsepos, 'Value') == 1) || (get(handles.secant, 'Value') == 1)
+if (get(handles.bisection, 'Value') == 1) || (get(handles.falsepos, 'Value') == 1) 
     set(handles.interval, 'enable', 'on');  
     set(handles.interval_name, 'String', 'Interval');  
+    set(handles.uitable1, 'columnname', {'xl', 'xu', 'xr', 'f(xr)', 'err'});
 elseif (get(handles.newt, 'Value') == 1)
     set(handles.interval, 'enable', 'on');  
     set(handles.interval_name, 'String', 'Xo');  
+    set(handles.uitable1, 'columnname', {'x(i)', 'x(i+1)', 'err'});
+elseif (get(handles.secant, 'Value') == 1)
+    set(handles.interval, 'enable', 'on');  
+    set(handles.interval_name, 'String', 'Interval'); 
+    set(handles.uitable1, 'columnname', {'x(i-1)', 'x(i)', 'f(xi-1)', 'f(xi)', 'x(i+1)' , 'err'});
 else
     set(handles.interval, 'enable', 'off');
 end
@@ -384,6 +400,16 @@ function unitgroup_SelectionChangedFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.interval,  'String', 0);
+global currStep;
+currStep = 2;
+
+global tolFlag;
+tolFlag = 0;
+
+set(handles.uitable1, 'columnname', {'xl', 'xu', 'xr', 'f(xr)', 'err'});
+set(handles.uitable1, 'data', []);
+
+
 if (hObject == handles.bisection) || (hObject == handles.falsepos)
     set(handles.interval_name, 'String', 'Interval'); 
     set(handles.uitable1, 'columnname', {'xl', 'xu', 'xr', 'f(xr)', 'err'});
@@ -398,7 +424,7 @@ else
 end
 
 % --------------------------------------------------------------------
-function initialize_gui(fig_handle, handles, isreset)
+function initialize_gui(handles)
 % If the metricdata field is present and the reset flag is false, it means
 % we are we are just re-initializing a GUI by calling it from the cmd line
 % while it is up. So, bail out as we dont want to reset the data.
@@ -415,6 +441,7 @@ set(handles.interval,  'String', 0);
 set(handles.itr, 'String', 50);
 set(handles.tol,  'String', 0.00001);
 set(handles.ans, 'String', 0);
+
 set(handles.uitable1, 'columnname', {'xl', 'xu', 'xr', 'f(xr)', 'err'});
 set(handles.uitable1, 'data', []);
 
@@ -512,7 +539,6 @@ validate(handles);
  elseif(get(handles.falsepos,'Value') == 1)
     int = strsplit(int);
     
-    
     if length(int) < 2
         set(handles.interval, 'String', 0);
         errordlg('Interval must be valid','Error');
@@ -522,9 +548,36 @@ validate(handles);
     xl=str2double(int(1));
     xu=str2double(int(2));
     
-    if f(xu)*f(xl)<0
-        ans = false_pos(f, xl, xu, tol, itr);
-        set(handles.ans, 'String', ans);
+    if f(xu)*f(xl)<0S
+        output = [];
+        prev_ans = 0;
+        if currStep > itr+1
+            errordlg('Iterations specified surpassed!','Error');
+            return;
+        end
+        if tolFlag
+            errordlg('Error limit reached!','Error');
+            return
+        end
+        for i = 2:currStep
+            line = [ xl xu ];
+            [xl, xu, ans, fx, ~] = false_pos(f, xl, xu, tol, 3);
+            if i == 2
+                err = prev_ans;
+            else
+                err = abs(ans-prev_ans)/ans;
+            end
+            line = [line ans fx err];
+            output = [output; line;];
+            set(handles.ans, 'String', ans);
+            if(err < tol && err ~= 0)
+                tolFlag = 1;
+                break;
+            end;
+            prev_ans = ans;
+        end
+        set(handles.uitable1, 'data', output);
+        currStep = currStep+1;
     else
         errordlg('f(xu)*f(xl) must be <0','Error');
         return
@@ -540,10 +593,30 @@ validate(handles);
      
      syms x;
      f1=inline2sym(f);
-          
-     ans = newton(f1, xo, tol, itr);
-     set(handles.ans, 'String', ans);
- end
+     
+    output = [];
+    prev_ans = 0;
+    if currStep > itr+1
+        errordlg('Iterations specified surpassed!','Error');
+        return;
+    end
+    if tolFlag
+        errordlg('Error limit reached!','Error');
+        return
+    end
+    for i = 2:currStep
+        [x1, fx1, x2, fx2, x3, fx3, err] = newton(f1, xo, tol, 3);
+        output = [output; xo x1 err;];
+        set(handles.ans, 'String', x1);
+        if(err < tol && err ~= 0)
+            tolFlag = 1;
+            break;
+        end;
+        xo = x1;
+    end
+    set(handles.uitable1, 'data', output);
+    currStep = currStep+1;
+end
  % Secant
  if(get(handles.secant,'Value') == 1)
     int=strsplit(int);
@@ -555,11 +628,46 @@ validate(handles);
     
     xl=str2double(int(1));
     xu=str2double(int(2));
-   
-   ans = secant(f, xl, xu, tol, itr);
-   set(handles.ans, 'String', ans);
+    output = [];
+    prev_ans = 0;
+    if currStep > itr+1
+        errordlg('Iterations specified surpassed!','Error');
+        return;
+    end
+    if tolFlag
+        errordlg('Error limit reached!','Error');
+        return
+    end
+    for i = 2:currStep
+        [x1, x2, fx1, fx2, x3, err] = secant(f, xl, xu, tol, 3);
+        
+        output = [output; x1 x2 fx1 fx2 x3 err;];
+        xl = x2;
+        xu = x3;
+        set(handles.ans, 'String', x3);
+        if(err < tol && err ~= 0)
+            tolFlag = 1;
+            break;
+        end;
+    end
+    set(handles.uitable1, 'data', output);
+    currStep = currStep+1;
+%    ans = secant(f, xl, xu, tol, itr);
+%    set(handles.ans, 'String', ans);
  end
 
+ 
+% --- Resets table and global variables
+function reset_table(handles)
+global currStep;
+currStep = 2;
+
+global tolFlag;
+tolFlag = 0;
+
+set(handles.uitable1, 'data', []);
+
+ 
 % --- Executes during object creation, after setting all properties.
 function uitable1_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to uitable1 (see GCBO)

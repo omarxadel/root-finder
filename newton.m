@@ -1,4 +1,4 @@
-function [ output_args ] = newton(f, x0, tol, itr )
+function [ x, x1, err ] = newton(f, x0, tol, itr )
 %NEWTON Find the root of the given function using Newton-Raphson method
 %   Input:
 %           f: The input function to calculate its root
@@ -10,14 +10,16 @@ function [ output_args ] = newton(f, x0, tol, itr )
 
 syms x;
 der=diff(f);
-
-for i=2:itr
+x = x0;
+i = 2;
+while i < itr
     f0=subs(f,'x',x0);
     f0_der=subs(der,'x',x0);
     x1=x0-(double(f0)/double(f0_der));
     if abs(x1-x0)<tol,break,end
     x0=x1;
+    i = i + 1;
 end 
-output_args = num2str(x1);
+err = abs(x1-x);
 end
 

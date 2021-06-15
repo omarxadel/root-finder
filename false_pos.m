@@ -1,4 +1,4 @@
-function [ output_args ] = false_pos( f, xl, xu, tol, itr )
+function [ xl, xu, xr, fx, err ] = false_pos( f, xl, xu, tol, itr )
 %FALSE_POS Find the root of the given function using false position method
 %   Input:
 %           f: The input function to calculate its root
@@ -27,7 +27,7 @@ xnew(i)=xr;
 
 if abs((xnew(i)-xnew(i-1))/xnew(i))<tol,break,end
 end
-output_args = num2str(xr);
-
+fx = f(xr);
+err = abs((xnew(i)-xnew(i-1))/xnew(i));
 end
 
