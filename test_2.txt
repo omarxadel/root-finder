@@ -1,0 +1,4 @@
+exp(x) + 2^(-x) + 2 * cos(x) - 6
+False-Position
+1.8 1.9
+0.0001
