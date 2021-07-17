@@ -8,15 +8,11 @@ function [ xl, xu, xr, fx, err ] = false_pos( f, xl, xu, tol, itr )
 %           itr: Iterations limit
 %   This function takes the function, interval, error tolerance and
 %   iterations limit to compute the root using false position method.
+i = 2;
 
-for i=2:itr
+while i<itr
     xr=((xl*f(xu))-(xu*f(xl)))/(f(xu)-f(xl));
-    if f(xu)*f(xr)<0
-        xl=xr;
-    else
-        xu=xr;
-    end
- 
+
     if f(xl)*f(xr)<0
         xu=xr;
     else
@@ -26,8 +22,9 @@ xnew(1)=0;
 xnew(i)=xr;
 
 if abs((xnew(i)-xnew(i-1))/xnew(i))<tol,break,end
+i = i + 1;
 end
 fx = f(xr);
-err = abs((xnew(i)-xnew(i-1))/xnew(i));
+err = abs((xnew(i-1)-xnew(i-2))/xnew(i-1));
 end
 

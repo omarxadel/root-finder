@@ -11,17 +11,13 @@ function [ xl, xu, xr, fx, err ] = bisection( f, xl, xu, tol, itr )
 i = 2;
 while i<itr
     xr=(xu+xl)/2;
-    if f(xu)*f(xr)<0
-        xl=xr;
-    else
-        xu=xr;
-    end
- 
+
     if f(xl)*f(xr)<0
         xu=xr;
     else
         xl=xr;
     end
+    
 xnew(1)=0;
 xnew(i)=xr;
 if i > 2
